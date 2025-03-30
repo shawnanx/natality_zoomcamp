@@ -1,0 +1,113 @@
+id: 02_gcp_bucket_bq
+namespace: natality
+
+# inputs:
+#   - id: year
+#     type: SELECT
+#     displayName: Select year
+#     values: [2018, 2019, 2020]
+#     defaults: 2018
+
+variables:
+  year: "{{trigger.date | date('yyyy')}}"
+  file: "natality{{trigger.date | date('yyyy')}}ps.csv"
+  gcs_file: "gs://{{kv('GCP_BUCKET_NAME')}}/{{vars.file}}"
+  table: "{{kv('GCP_DATASET')}}.natality_data_{{trigger.date | date('yyyy')}}ps"
+
+tasks:
+  - id: log-vars
+    type: io.kestra.plugin.core.log.Log
+    message: "T {{ trigger.date }}! 🚀 \n
+      year is {{render(vars.year)}} \n
+      file is {{render(vars.file)}} \n
+      gcs_file {{render(vars.gcs_file)}} \n
+      table {{render(vars.table)}}"
+
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: https://data.nber.org/nvss/natality/csv/{{render(vars.year)}}/{{render(vars.file)}}
+
+  - id: upload_to_gcs
+    type: io.kestra.plugin.gcp.gcs.Upload
+    from: "{{outputs.extract.uri}}"
+    to: "{{render(vars.gcs_file)}}"
+
+  - id: create_table_main
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      CREATE TABLE IF NOT EXISTS `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.natality_data`
+      (
+        unique_id BYTES OPTIONS (description = 'generated unique identifier'),
+        dob_yy INT64 OPTIONS (description = 'Year of birth'),
+        dob_date DATE OPTIONS (description = 'Synthetic date column for partitioning'),
+        dbwt INT64 OPTIONS (description = 'Baby birth weight in grams'),
+        mager INT64 OPTIONS (description = 'Mother age'),
+        mager9 INT64 OPTIONS (description = 'Mother’s age group (9 categories)'),
+        meduc INT64 OPTIONS (description = 'Mother education level'),
+        mrace6 INT64 OPTIONS (description = 'Mother race')
+      )
+      PARTITION BY dob_date
+      CLUSTER BY mager;
+
+  - id: load_gcp_to_bq
+    type: io.kestra.plugin.gcp.bigquery.LoadFromGcs
+    destinationTable: "{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}_ext"
+    ignoreUnknownValues: true
+    autodetect: true
+    format: CSV
+    csvOptions:
+      allowJaggedRows: true
+      encoding: UTF-8
+      fieldDelimiter: ","
+    from:
+      - "{{render(vars.gcs_file)}}"
+
+  - id: create_table_tmp
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      CREATE OR REPLACE TABLE `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}`
+      AS
+      SELECT
+        MD5(CONCAT(
+          "{{render(vars.file)}}",
+          "_",  -- Separator
+          CAST(ROW_NUMBER() OVER () AS STRING)
+        )) AS unique_id,
+        DATE(dob_yy, 1, 1) AS dob_date,
+        dob_yy,
+        dbwt,
+        mager,
+        mager9,
+        meduc,
+        mrace6
+      FROM `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}_ext`;
+
+  - id: merge_table_main
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      MERGE INTO `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.natality_data` T
+      USING `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}` S
+      ON T.unique_id = S.unique_id
+      WHEN NOT MATCHED THEN
+        INSERT (unique_id, dob_yy, dob_date, dbwt, mager, mager9, meduc, mrace6)
+        VALUES (S.unique_id, S.dob_yy, S.dob_date, S.dbwt, S.mager, S.mager9, S.meduc, S.mrace6);
+
+  - id: purge_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+    description: To avoid cluttering your storage, we will remove the downloaded files
+
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{kv('GCP_CREDS')}}"
+      projectId: "{{kv('GCP_PROJECT_ID')}}"
+      location: "{{kv('GCP_LOCATION')}}"
+      bucket: "{{kv('GCP_BUCKET_NAME')}}"
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 1 1 *"
+    stopAfter:
+      - FAILED

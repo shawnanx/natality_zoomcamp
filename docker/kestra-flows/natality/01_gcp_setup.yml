@@ -1,0 +1,57 @@
+id: 01_gcp_setup
+namespace: natality
+
+tasks:
+  - id: gcp_creds
+    type: io.kestra.plugin.scripts.shell.Commands
+    runner: PROCESS
+    commands:
+      - |
+        # Read the JSON file and store it in Kestra's KV store
+        curl -sS -X PUT \
+          -H "Content-Type: application/json" \
+          http://localhost:8080/api/v1/namespaces/{{flow.namespace}}/kv/GCP_CREDS \
+          --data-binary @/app/gcp-key.json
+
+  - id: gcp_project_id
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_PROJECT_ID
+    kvType: STRING
+    value: natality-data-project-dez
+
+  - id: gcp_location
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_LOCATION
+    kvType: STRING
+    value: us-west1
+    
+  - id: gcp_bucket_name
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_BUCKET_NAME
+    kvType: STRING
+    value: natality-data-bucket
+
+  - id: gcp_dataset
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_DATASET
+    kvType: STRING
+    value: natality_data
+
+  - id: create_gcs_bucket
+    type: io.kestra.plugin.gcp.gcs.CreateBucket
+    storageClass: REGIONAL
+    name: "{{kv('GCP_BUCKET_NAME')}}"
+    ifExists: SKIP
+
+  - id: create_bq_dataset
+    type: io.kestra.plugin.gcp.bigquery.CreateDataset
+    name: "{{kv('GCP_DATASET')}}"
+    ifExists: SKIP
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{kv('GCP_CREDS')}}"
+      projectId: "{{kv('GCP_PROJECT_ID')}}"
+      location: "{{kv('GCP_LOCATION')}}"
+      bucket: "{{kv('GCP_BUCKET_NAME')}}"
