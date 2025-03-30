@@ -12,10 +12,10 @@ inputs:
 tasks:
   - id: sync
     type: io.kestra.plugin.git.SyncNamespaceFiles
-    url: https://github.com/shawnanx/testzoomcamp
+    url: https://github.com/shawnanx/natality_zoomcamp/
     branch: main
     namespace: "{{flow.namespace}}"
-    gitDirectory: taxi_rides_ny
+    gitDirectory: dbt
     dryRun: false
     # disabled: true # this Git Sync is needed only when running it the first time, afterwards the task can be disabled
 
