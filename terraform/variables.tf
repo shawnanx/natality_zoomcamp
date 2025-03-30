@@ -1,6 +1,6 @@
 variable "project_id" {
   type    = string
-  default = "natality-data-project-dez"
+  default = "natality-data-project-dez-2"
 }
 
 variable "region" {
@@ -10,12 +10,12 @@ variable "region" {
 
 variable "credentials_file" {
   type    = string
-  default = "C:/Users/shawn/.gcp/terraform-key.json"
+  default = "../credentials/gcp-key.json"
 }
 
 variable "bucket_name" {
   type    = string
-  default = "natality-data-bucket"
+  default = "natality-data-bucket-2"
 }
 
 variable "location" {
