@@ -27,18 +27,3 @@ variable "dataset_id" {
   type    = string
   default = "natality_data"
 }
-
-variable "vm_name" {
-  type    = string
-  default = "kestra-instance"
-}
-
-variable "zone" {
-  type    = string
-  default = "us-west1-a"
-}
-
-variable "machine_type" {
-  type    = string
-  default = "e2-standard-16"
-}
