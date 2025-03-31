@@ -1,6 +1,6 @@
 variable "project_id" {
   type    = string
-  default = "natality-data-project-dez-2"
+  default = "natality-data-project-dez"
 }
 
 variable "region" {
@@ -15,7 +15,7 @@ variable "credentials_file" {
 
 variable "bucket_name" {
   type    = string
-  default = "natality-data-bucket-2"
+  default = "natality-data-bucket"
 }
 
 variable "location" {
