@@ -8,16 +8,12 @@
 - **Google Cloud Platform** account with:
   - Billing enabled
   - Owner permissions (for initial setup)
-
-### SETUP INSTRUCTIONS
-
-#### 1. REPOSITORY SETUP
+### REPOSITORY SETUP
 ```sh
 git clone https://github.com/shawnanx/natality_zoomcamp.git
 cd natality_zoomcamp
 ```
-
-#### 2. GCP CONFIGURATION
+### GCP CONFIGURATION
 1. Create a project named `natality-data-project-dez`
 2. Create a service account with:
    - BigQuery Admin role
@@ -25,7 +21,7 @@ cd natality_zoomcamp
 3. Generate a JSON key and save it as `gcp-key.json` in the project root
    - **Important**: Keep this file safe and never commit it to version control
 
-#### 3. IaC SETUP
+### IaC SETUP
 ```sh
 cd terraform
 # Review and modify variables.tf as needed
@@ -34,18 +30,16 @@ terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
-#### 4. LAUNCH PIPELINE
+### LAUNCH PIPELINE
 ```sh
 cd ../docker
 docker-compose up -d
 ```
 Access Kestra UI at: [http://localhost:8080](http://localhost:8080)
 
----
+### PIPELINE EXECUTION
 
-## PIPELINE EXECUTION
-
-### TASK 1: GCP SETUP (`01_gcp_setup`)
+#### TASK 1: GCP SETUP (`01_gcp_setup`)
 1. Edit variables in Kestra UI:
    - **Project ID**: `natality-data-project-dez`
    - **Bucket name**: `[your-bucket-name]`
@@ -53,21 +47,25 @@ Access Kestra UI at: [http://localhost:8080](http://localhost:8080)
    - GCS bucket
    - BigQuery dataset
 ![Task 1 Execution Preview](./task_execution_1.png) 
-### TASK 2: DATA BACKFILL (`02_gcp_bq`)
+#### TASK 2: DATA BACKFILL (`02_gcp_bq`)
 1. Enable backfill trigger
 2. Set date range:
    - **Start**: `2014-01-01 00:00:00`
    - **End**: `2023-01-02 00:00:00`
 3. Execute backfill
+4. The flow will automatically:
+   - Download the raw data in CSV format from an external source
+   - Upload the CSV files to the GCS bucket
+   - Load the data from GCS into the BigQuery dataset
+   - Remove unused columns and clean the data as part of the dataset creation process
+   - Merge the cleaned data into a BigQuery table.
    - **Important**: Ensure the data in the date range is complete, as data from years before 2014 might require manual schema adjustments if used
 ![Task 2 Execution Preview](./task_execution_2.png) 
-### TASK 3: DBT TRANSFORMATION (`03_dbt_bq`)
+#### TASK 3: DBT TRANSFORMATION (`03_dbt_bq`)
 1. Execute flow to:
    - Create analytics views
 ![Task 3 Execution Preview](./task_execution_3.png) 
 ---
-
-## DATA VISUALIZATION
 
 ### LOOKER STUDIO SETUP
 1. Connect to BigQuery
@@ -75,15 +73,34 @@ Access Kestra UI at: [http://localhost:8080](http://localhost:8080)
 3. Build dashboards
 ![Dashboard Preview](./dashboard.png) 
 
-
 ---
 
-## ARCHITECTURE FLOW
+## CRITERIA REIVEW
+
+### Problem description
+   - *Clearly outlined in the README.md, specifying the problem and project motivation*
+### Cloud
+   - *Utilizes GCP with Cloud Storage and BigQuery for data storage and analysis*
+   - *Infrastructure is managed with Terraform, following IaC principles*
+### Data ingestion
+   - *Automated end-to-end pipeline using Kestra*
+### Stream
+   - *Streaming technologies are not implemented*
+### Data warehouse
+   - *Main table partitioned by birth year for efficient year-to-year comparisons*
+   - *Main table Clustered by maternal group for optimized filtering*
+### Transformations
+   - *Data transformations performed with dbt for maintainability and efficiency*
+### Dashboard
+   - *Dashboard provided with 4 key tiles as detailed in the README.md*
+### Reproducibility
+   - *Manually tested with clear instructions for running the pipeline*
+
 ![Architecture Preview](./architecture.png) 
 
 ---
 
-## IMPORTANT NOTES
+## IMPORTANT NOTES & COMMON ISSUES
 
 ### SECURITY
 - **Never** commit `gcp-key.json` to version control
@@ -92,24 +109,17 @@ Access Kestra UI at: [http://localhost:8080](http://localhost:8080)
 - JSON key **must** be named exactly `gcp-key.json`
 - Must be placed in the project root
 
----
-
-## TROUBLESHOOTING
-
-### COMMON ISSUES
-
-#### Docker Failures
+### Docker Failures
 - Run: `docker system prune -a`
 - Rebuild containers
    
-#### GCP Permission Errors
+### GCP Permission Errors
 - Verify that both roles are assigned correctly
 - Check that the service account email matches
 
-#### Backfill Problems
+### Backfill Problems
 - Check Kestra executor logs
 - Verify date range format
 - `Important Note`: Data files from years before 2014 may:
    - Lack certain columns used in this analysis
    - Require manual schema adjustment if included
-
