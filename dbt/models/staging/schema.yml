@@ -14,101 +14,82 @@ sources:
           - name: dbwt
           - name: mager
           - name: mager9
-
 models:
-  - name: stg_birth_data
+  - name: stg_avg_m_age_by_year
     description: >
-      Cleaned staging model for birth records containing standardized fields
-      for mother demographics and baby birth characteristics.
-    columns:
-      - name: unique_id
-        description: Generated unique identifier for each birth record
-        tests:
-          - unique:
-              severity: warn
-          - not_null:
-              severity: warn
-
-      - name: dob_yy
-        description: Year of birth
-        tests:
-          - not_null
-
-      - name: dob_date
-        description: Synthetic date column for partitioning (YYYY-MM-DD format)
-        tests:
-          - not_null
-
-      - name: dbwt
-        description: Baby birth weight in grams
-        tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: "dbwt BETWEEN 500 AND 6000"
-              severity: warn
-
-      - name: mager
-        description: Mother's exact age in years
-        tests:
-          - dbt_utils.expression_is_true:
-              expression: "mager BETWEEN 15 AND 50"
-              severity: warn
-
-      - name: mager9
-        description: Mother's age group (9 categories)
-        tests:
-          - accepted_values:
-              values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
-              severity: warn
-
-      - name: meduc
-        description: Mother's education level
-        tests:
-          - accepted_values:
-              values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
-              severity: warn
-              description: "1=8th grade or less, 2=9-12th grade, ..., 9=unknown"
-
-      - name: mrace6
-        description: Mother's race (6 categories)
-        tests:
-          - accepted_values:
-              values: [1, 2, 3, 4, 5, 6]
-              severity: warn
-              description: "1=White, 2=Black, 3=AIAN, 4=Asian, 5=NHOPI, 6=Multiple"
-
-  - name: stg_mother_age_distribution
-    description: >
-      Percentage distribution of births by mother's age group for 2023 data.
-      Used for demographic analysis.
-    columns:
-      - name: mother_age_group
-        description: Categorical age group (1-9)
-      - name: count
-        description: Number of births in this age group
-      - name: percentage
-        description: Percentage of total births
-
-  - name: stg_avg_mother_age_by_year
-    description: >
-      Average mother age by birth year from 2018-2023.
-      Shows trends in maternal age over time.
+      Calculates average mother age by birth year with statistical measures.
+    config:
+      materialized: view
     columns:
       - name: year
-        description: Year of birth
+        description: "Birth year extracted from dob_yy"
       - name: avg_mother_age
-        description: Average age of mothers this year
+        description: "Average mother age rounded to 2 decimal places"
       - name: record_count
-        description: Number of births analyzed
+        description: "Number of records included in calculation"
+      - name: std_dev_age
+        description: "Standard deviation of mother ages (2 decimal places)"
+      - name: min_age
+        description: "Youngest mother age in the year"
+      - name: max_age
+        description: "Oldest mother age in the year"
 
-  - name: stg_baby_weight_by_age_group
+  - name: stg_birth_weight_m_age
     description: >
-      Average baby weight stratified by mother's age group.
-      Uses all available data years.
+      Calculates birth weight statistics by mother's age group.
+      Excludes null values and invalid weights (0 or 9999).
+      Uses the mager9 age group classification system.
+    config:
+      materialized: view
     columns:
-      - name: mother_age_group
-        description: Categorical age group (1-9)
-      - name: avg_baby_weight_grams
-        description: Mean birth weight for this age group
-      - name: record_count
-        description: Number of births in calculation
+    - name: age_group
+      description: "Mother's age group code (1-9)"
+    - name: age_group_description
+      description: "Text description of age group"
+    - name: avg_birth_weight
+      description: "Average birth weight in grams (2 decimal places)"
+    - name: record_count
+      description: "Number of records in calculation"
+    - name: std_dev_birth_weight
+      description: "Standard deviation of weights (2 decimal places)"
+    - name: min_birth_weight
+      description: "Minimum recorded weight in grams"
+    - name: max_birth_weight
+      description: "Maximum recorded weight in grams"
+
+  - name: stg_m_age_distr_ealiest
+    description: >
+      Shows mother's age group distribution for the earliest available year in the dataset.
+      Uses mager9 age classification and calculates percentage distribution.
+    config:
+      materialized: view
+    columns:
+    - name: age_group
+      description: "Mother's age group code (1-9)"
+    - name: age_group_description
+      description: "Text description of age group category"
+    - name: birth_count
+      description: "Number of births in this age group"
+    - name: percentage
+      description: "Percentage of total births (2 decimal places)"
+    - name: report_year
+      description: "The earliest year analyzed (from dob_yy)"
+
+  - name: stg_m_age_distr_latest
+    description: >
+      Calculates mother's age group distribution for the most recent year available.
+      Uses explicit type casting and validates age groups (1-9).
+      Shows both counts and percentage distribution.
+    config:
+      materialized: view
+    columns:
+    - name: age_group
+      description: "Mother's age category (1-9), explicitly cast as INT64"
+    - name: age_group_description
+      description: "Human-readable age group label"
+    - name: birth_count
+      description: "Absolute number of births in this age group"
+    - name: percentage
+      description: "Percentage of total births (rounded to 2 decimals)"
+    - name: report_year
+      description: "The latest year analyzed (from dob_yy)"
