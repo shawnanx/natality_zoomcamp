@@ -1,29 +1,18 @@
 # **Maternal Age and Birth Weight Trends Analysis**  
-*A Data Engineering Project*  
+*A DEZoomcamp Data Engineering Capstone Project*  
 
 ## **Overview**  
-Maternal age is a known factor in neonatal health outcomes. Birth weight, a key indicator of neonatal health, may vary depending on the mother’s age. This project analyzes CDC natality data (2017–2023) to:  
+Maternal age is a known factor in neonatal health outcomes. Birth weight, a key indicator of neonatal health, may vary depending on the maternal age. This project analyzes CDC natality data from 2014 to 2023 to:  
 - Track shifts in maternal age distribution.
 - Correlate maternal age with birth weight trends.
 - Provide scalable data pipelines for public health research.
 
 ---
 
-## **Project Deliverables**  
-### **Data Engineering Criteria Met**  
-1. **Data Ingestion**  
-   - Collected CDC natality data (2017–2023) from public sources.  
-   - Automated downloads using Python (`requests`/`wget`) or cloud tools (e.g., AWS S3).  
-2. **Data Processing**  
-   - Cleaned and standardized fields (e.g., maternal age groups, birth weight categories).  
-   - Handled missing data (e.g., imputation for outliers in birth weight).  
-3. **Storage**  
-   - Stored processed data in a structured format (BigQuery and GCS) for analysis.
-4. **Analysis & Visualization**  
-   - Generated aggregated statistics (e.g., average birth weight by age group).  
-   - Built dashboards (Tableau/Power BI/Plotly) for trend visualization.  
-5. **Automation**  
-   - Scheduled pipelines (Airflow/Luigi) for periodic data updates.  
+## **Project Architecture**
+The project follows a cloud-native ETL pipeline, integrating automated ingestion, processing, and storage for scalable analysis.
+[![Pipeline Architecture](docs/architecture.png)](docs/README.md)  
+*Click to view technical documentation*  
 
 ---
 
@@ -41,23 +30,19 @@ For setup and reproducibility instructions, see the [project documentation](docs
 ## **Why It Matters**  
 - **Healthcare**: Identifies high-risk age groups for targeted interventions.  
 - **Policy**: Supports evidence-based maternal health programs.  
-- **Engineering Impact**: Demonstrates scalable pipelines for public health data.  
+- **Engineering Impact**: Build a cloud-native, automated data pipeline for efficient public health data processing.
+
+
 
 ---
 
 ## **Future Work**  
-1. Expand data pipeline to include real-time CDC API feeds.  
-2. Deploy cloud-based ETL (e.g., AWS Glue, Databricks).  
-3. Add predictive modeling (e.g., low birth weight risk by age).  
-
+- **Expand Dataset**: Incorporate full CDC dataset for deeper analysis.
+- **Enhance Automation**: Add service account auto-creation for deployments.
+- **Cloud Deployment**: Deploy Kestra on cloud VMs to eliminate local environment dependency.
+- **Batch Processing**: Implement Spark for large-scale data processing.
+- **Improve DevOps**: Add testing, Makefile support, and a CI/CD pipeline.
 ---
 
 ### **Data Sources**  
-- [CDC Natality Data](https://www.cdc.gov/nchs/data_access/vitalstatsonline.htm)  
-
----
-
-### **Key Features for Data Engineers**  
-- **Modular Code**: Separates ingestion, processing, and analysis.  
-- **Documentation**: Clear setup instructions and dependencies.  
-- **Scalability**: Designed for larger datasets (e.g., full CDC NVSS database).  
+- [CDC Natality Data](https://data.nber.org/nvss/natality/)  
