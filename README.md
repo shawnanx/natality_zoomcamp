@@ -9,13 +9,6 @@ Maternal age is a known factor in neonatal health outcomes. Birth weight, a key 
 
 ---
 
-## **Project Architecture**
-The project follows a cloud-native ETL pipeline, integrating automated ingestion, processing, and storage for scalable analysis.
-[![Pipeline Architecture](docs/architecture.png)](docs/README.md)  
-*Click to view technical documentation*  
-
----
-
 ## **Getting Started**  
 For setup and reproducibility instructions, see the [project documentation](docs/README.md).  
 

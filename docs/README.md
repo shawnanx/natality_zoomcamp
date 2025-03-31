@@ -96,8 +96,6 @@ Access Kestra UI at: [http://localhost:8080](http://localhost:8080)
 ### Reproducibility
    - *Manually tested with clear instructions for running the pipeline*
 
-![Architecture Preview](./architecture.png) 
-
 ---
 
 ## IMPORTANT NOTES & COMMON ISSUES
